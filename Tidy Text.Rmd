@@ -31,3 +31,64 @@ rest_inspec =
 rest_inspec %>% filter(grade == "C") %>% View
 ```
 
+```{r}
+inspection_words = rest_inspec %>%
+  unnest_tokens(word, violation_description)
+```
+
+Count some words...
+
+```{r}
+data("stop_words")
+
+inspection_words = anti_join(inspection_words, stop_words)
+```
+
+Now really counting words....
+```{r}
+inspection_words %>% 
+  count(word, sort = TRUE) %>% 
+  top_n(10) %>% 
+  mutate(word = fct_reorder(word, n)) %>% 
+  ggplot(aes(x = word, y = n)) + 
+  geom_bar(stat = "identity", fill = "blue", alpha = .6) + 
+  coord_flip()
+```
+Compute OR comapring A to C letter grades
+
+```{r}
+word_ratios = 
+  inspection_words %>%
+  filter(grade %in% c("A", "C")) %>% 
+  # Count within each grade how many times a word appears
+  count(word, grade) %>%
+  group_by(word) %>% 
+  # Filtering out words that appear less than five times
+  filter(sum(n) >= 5) %>%
+  ungroup() %>%
+  spread(grade, n, fill = 0) %>%
+  # fill = 0 sets the missing word count as a 0 word count and not as an N/A
+  mutate(
+    C_odds = (C + 1) / (sum(C) + 1),
+    A_odds = (A + 1) / (sum(A) + 1),
+    log_OR = log(C_odds / A_odds)
+  ) %>%
+  arrange(desc(log_OR)) 
+```
+
+```{r}
+word_ratios %>%
+  mutate(pos_log_OR = ifelse(log_OR > 0, "C > A", "A > C")) %>% 
+  group_by(pos_log_OR) %>%
+  top_n(15, abs(log_OR)) %>%
+  ungroup() %>%
+  mutate(word = fct_reorder(word, log_OR)) %>%
+  ggplot(aes(word, log_OR, fill = pos_log_OR)) +
+  geom_col() +
+  coord_flip() +
+  ylab("log odds ratio (C/A)") +
+  scale_fill_discrete(name = "")
+```
+
+
+
