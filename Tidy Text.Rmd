@@ -89,6 +89,47 @@ word_ratios %>%
   ylab("log odds ratio (C/A)") +
   scale_fill_discrete(name = "")
 ```
+Sentiments....
+
+```{r}
+bing_sentiments = get_sentiments("bing")
+```
+
+Sentiments in my violations
+```{r}
+inspection_sentiments = 
+  inspection_words %>% 
+  inner_join(., bing_sentiments) %>% 
+  count(inspection_num, sentiment) %>% 
+  spread(sentiment, n, fill = 0) %>% 
+  mutate(sentiment = positive - negative) %>% 
+  select(inspection_num, sentiment)
+```
+
+```{r}
+inspection_sentiments = 
+  right_join(rest_inspec, inspection_sentiments, 
+             by = "inspection_num")
+```
+
+```{r}
+set.seed(1)
+
+inspection_sentiments %>% 
+  filter(boro == "Manhattan") %>% 
+  sample_n(5000) %>% 
+  mutate(inspection_num = factor(inspection_num),
+    inspection_num = fct_reorder(inspection_num, sentiment)) %>% 
+  ggplot(aes(x = inspection_num, 
+             y = sentiment, fill = grade, color = grade)) + 
+  geom_bar(stat = "identity") + 
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  scale_fill_viridis(discrete = TRUE) + 
+  scale_color_viridis(discrete = TRUE) 
+```
+
 
 
 
