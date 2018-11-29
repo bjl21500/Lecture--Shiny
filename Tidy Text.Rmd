@@ -1,0 +1,33 @@
+---
+title: "Tidy Text"
+author: "Briana Lettsome"
+date: "November 29, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(viridis)
+
+library(p8105.datasets)
+
+library(tidytext)
+```
+
+```{r}
+data("rest_inspec")
+
+rest_inspec = 
+  rest_inspec %>% 
+  filter(grade %in% c("A", "B", "C")) %>% 
+  mutate(inspection_num = row_number(),
+         boro = str_to_title(boro)) %>% 
+  select(inspection_num, boro, grade, score, critical_flag, dba, cuisine_description, zipcode, violation_description)
+```
+
+```{r}
+rest_inspec %>% filter(grade == "C") %>% View
+```
+
